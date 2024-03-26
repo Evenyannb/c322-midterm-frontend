@@ -16,6 +16,17 @@
     padding: 15px;
     border: 1px solid yellow;
   }
-
+  #selectedQuestions {
+    display: flex; /* Use Flexbox */
+    flex-direction: column; /* Align items vertically */
+    gap: 10px; /* Space between items */
+    /* Keep the rest of your styles here */
+  }
+  .card {
+    border: 1px solid #ddd; /* Optional: Adds a slight border to each card */
+    border-radius: 5px; /* Optional: Rounds the corners of the cards */
+    padding: 10px; /* Optional: Adds some padding inside each card */
+    background-color: white; /* Optional: Sets a background color for the cards */
+  }
   
 

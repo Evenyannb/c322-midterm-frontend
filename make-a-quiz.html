@@ -3,9 +3,191 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>Create a Quiz</title>
+  <link rel="stylesheet" href="navbar.css">
+  <link rel="stylesheet" href="general.css">
+  <link rel="stylesheet" href="cards.css">
+  <link rel="stylesheet" href="make-a-quiz.css">
 </head>
+<ul class="topnav">
+  <li><a href="index.html">Home</a></li>
+  <li><a href="add-question.html">Add questions</a></li>
+  <li><a class="active" href="make-a-quiz.html">Create a quiz</a></li>
+  <li><a href="take-a-quiz.html">Take a quiz</a></li>
+  <li class="right"><a href="#about">About</a></li>
+</ul>
+
+<h2>Question Bank</h2>
+<div id="questionBank" class="cards">
+</div>
+
+<aside id="newQuizSection">
+  <h2>The new quiz(<span id="questionCount">0</span> questions)</h2>
+  <label for="quizTitle">Quiz title:</label><br>
+  <input type="text" id="quizTitle" name="quizTitle" required><br>
+  <button onclick="saveQuiz()">Save your changes</button>
+  <button onclick="saveAndStartNewQuiz()">Save this quiz and start a new one</button>
+  <div id="selectedQuestions">
+
+  </div>
+</aside>
 <body>
-  
+  <script>
+    const backendUrl = 'http://localhost:8080';
+
+    async function fetchQuestions() {
+      const response = await fetch(`${backendUrl}/questions`);
+      if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+      return await response.json();
+  }
+
+    async function fetchAndDisplayQuestions() {
+      try {
+        const questions = await fetchQuestions();
+        const questionBankDiv = document.getElementById('questionBank');
+        questionBankDiv.innerHTML = ''; 
+        questions.forEach((question) => {
+        const questionCard = createQuestionCard(question);
+        questionBankDiv.appendChild(questionCard);
+      });
+        } catch (error) {
+          console.error('Could not fetch questions:', error);
+        }
+      }
+
+      function createQuestionCard(question) {
+      
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'card';
+        cardDiv.innerHTML = `
+        <img src="${backendUrl}/questions/${question.id}/image" alt="Question image" style="width:50%">
+        <h4><b>${question.id}</b></h4> 
+        <p>${question.description}</p>
+        <form>
+            <input type="radio" id="q${question.id}ptionA" name="q2Answer" value="A">
+            <label for="q${question.id}ptionA">${question.choices[0]}</label><br>
+
+            <input type="radio" id="q${question.id}ptionB" name="q2Answer" value="B">
+            <label for="q${question.id}ptionB">${question.choices[1]}</label><br>
+
+            <input type="radio" id="q${question.id}ptionC" name="q2Answer" value="C">
+            <label for="q${question.id}ptionC">${question.choices[2]}</label><br>       
+        </form> 
+          <button onclick="addQuestionToQuiz(${question.id})">Add to Quiz</button>
+        </div>
+        `;
+        return cardDiv;
+        }
+
+        let selectedQuestions = []; 
+
+        function addQuestionToQuiz(questionId) {
+          fetch(`${backendUrl}/questions/${questionId}`)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Network response was not ok');
+              }
+              return response.json();
+            })
+            .then(question => {
+              selectedQuestions.push(question); 
+              updateNewQuizDisplay(); 
+            })
+            .catch(error => {
+              console.error('Could not add question to quiz:', error);
+            });
+        }
+        
+        function updateNewQuizDisplay() {
+          const selectedQuestionsDiv = document.getElementById('selectedQuestions');
+          selectedQuestionsDiv.innerHTML = ''; 
+          selectedQuestions.forEach((question) => {
+            let questionCard = createQuestionCard(question);
+            
+            questionCard.id = `questionCard-${question.id}`;
+    
+            let addButton = questionCard.querySelector('button');
+            addButton.remove();
+    
+            let removeButton = document.createElement('button');
+            removeButton.textContent = 'Remove from Quiz';
+            removeButton.onclick = function() {
+                removeQuestionFromQuiz(question.id);
+            };
+    
+            questionCard.appendChild(removeButton);
+            
+            selectedQuestionsDiv.appendChild(questionCard);
+        });
+          document.getElementById('questionCount').textContent = selectedQuestions.length.toString();
+      }
+      
+        function removeQuestionFromQuiz(questionIndex) {
+          const questionCard = document.getElementById(`questionCard-${questionId}`);
+          if (questionCard) {
+              questionCard.remove();
+          }
+      
+          selectedQuestions = selectedQuestions.filter(question => question.id !== questionId);
+          
+          document.getElementById('questionCount').textContent = selectedQuestions.length.toString();
+      }
+        async function saveAndStartNewQuiz() {
+          await saveQuiz();
+          
+          document.getElementById('quizTitle').value = ''; 
+          selectedQuestions = []; 
+          updateNewQuizDisplay(); 
+        
+          
+         
+          document.getElementById('questionCount').textContent = '0';
+          
+          
+        }
+
+        async function saveQuiz() {
+          const quizId = generateQuizId();
+          const quizTitle = document.getElementById('quizTitle').value;
+          const quiz = {
+            
+              id: quizId,
+              title: quizTitle,
+              questions: selectedQuestions.map(q => q.id)
+            
+          };
+        
+          const response = await fetch(`${backendUrl}/quizzes`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(quiz)
+          });
+        
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+        
+          const savedQuizId = await response.json(); 
+          console.log(`Quiz saved with ID: ${savedQuizId}`);
+          alert(`Quiz saved successfully! Your quiz ID is: ${savedQuizId}`);
+          
+          return savedQuizId; 
+        }
+        function generateQuizId() {
+          
+          const lastQuizId = parseInt(localStorage.getItem('lastQuizId') || '0', 10);
+          const nextQuizId = lastQuizId + 1; 
+          localStorage.setItem('lastQuizId', nextQuizId.toString());
+
+          return nextQuizId;
+        }
+
+
+    fetchAndDisplayQuestions();
+  </script>
 </body>
 </html>
